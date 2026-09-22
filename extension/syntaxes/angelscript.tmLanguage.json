@@ -3,6 +3,14 @@
     "scopeName": "source.angelscript",
     "patterns": [
         {
+            "name": "keyword.type.angelscript",
+            "match": "\\basync\\b(?=\\s+(?:[A-Za-z_][A-Za-z_0-9:<>]*[&@]?\\s+)[A-Za-z_][A-Za-z_0-9]*\\s*\\()"
+        },
+        {
+            "name": "keyword.statement.angelscript",
+            "match": "(?<![.\\w])\\bawait\\b(?=\\s+(?:[A-Za-z_0-9]|::))"
+        },
+        {
             "name": "keyword.declaration.angelscript",
             "match": "\\b(class|struct|delegate|event|import|enum|namespace)\\b"
         },

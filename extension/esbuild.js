@@ -1,4 +1,5 @@
 const esbuild = require("esbuild");
+const fs = require("node:fs");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -24,6 +25,11 @@ const esbuildProblemMatcherPlugin = {
 };
 
 async function main() {
+	// The bundled language client loads this helper relative to extension.js on Unix.
+	fs.mkdirSync('dist', { recursive: true });
+	fs.copyFileSync(require.resolve('vscode-languageclient/lib/node/terminateProcess.sh'), 'dist/terminateProcess.sh');
+	fs.chmodSync('dist/terminateProcess.sh', 0o755);
+	fs.copyFileSync(require.resolve('vscode-languageclient/License.txt'), 'dist/languageclient-LICENSE.txt');
 	const ctx = await esbuild.context({
 		entryPoints: [
 			'src/extension.ts',

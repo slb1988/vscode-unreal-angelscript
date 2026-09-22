@@ -1,5 +1,20 @@
 Language Server and Debug Adapter for use with the UnrealEngine-Angelscript plugin from https://angelscript.hazelight.se
 
+## 本地分发版本 1.9.5
+
+这是包含项目 async/await 编辑支持的内部构建，未发布 Marketplace；沿用扩展 ID `Hazelight.unreal-angelscript`，安装会替换同 ID 的已安装版本。
+
+- 接收者使用 **VS Code 1.67.0 或更新版**（建议当前稳定版），无需本仓库、Node/npm 或 Extension Development Host。
+- 在扩展面板 `…` → **Install from VSIX... / 从 VSIX 安装...** 选择 `unreal-angelscript-1.9.5.vsix`，按提示重载；也可运行 `code --install-extension ./unreal-angelscript-1.9.5.vsix`。
+- 打开项目的 **Script** 目录并连接带 AngelScript 支持的 Unreal；完整原生 API 提示/脚本调试需要对应 debug server（默认 `27099`）。async/await 的执行仍需项目运行时支持，本扩展只补齐编辑体验。
+- 重新打包方式见仓库中的 [开发运行文档](docs/development.md#打包与本地分发)；安装 VSIX 不需要先搭建该开发环境。
+
+## 中文开发文档
+
+- [模块说明与扩展教程](docs/README.md)：架构、keyword、自定义语法、代码提示与 debug server 协议。
+- [仓库开发与 AI 协作指南](AGETNS.md)（标准工具入口：[AGENTS.md](AGENTS.md)）。
+- [C++ debug server 可运行示例](examples/cpp-debug-server/README.md)：Visual Studio 调试服务端，VS Code 调试模拟脚本，串通断点、栈、变量和单步。
+
 ## Getting Started
 After building or downloading the Unreal Editor version with Angelscript
 enabled from the github page linked above, start the editor and use visual

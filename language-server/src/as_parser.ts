@@ -48,7 +48,7 @@ export let ASKeywords = [
     "for", "if", "enum", "return", "continue", "break", "class", "struct", "default",
     "void", "const", "delegate", "event", "else", "while", "case", "Cast", "namespace",
     "UFUNCTION", "UPROPERTY", "UCLASS", "USTRUCT", "nullptr", "true", "false", "this", "auto",
-    "final", "property", "override", "mixin", "switch", "fallthrough",
+    "final", "property", "override", "mixin", "switch", "fallthrough", "async", "await",
 ];
 
 export enum ASScopeType
@@ -531,6 +531,16 @@ export class ASScope extends ASElement
         return null;
     }
 
+    isInAsyncFunction() : boolean
+    {
+        for (let scope : ASScope = this; scope; scope = scope.parentscope)
+        {
+            if (scope.scopetype == ASScopeType.Function)
+                return !!(scope.previous instanceof ASStatement && scope.previous.ast?.isAsync);
+        }
+        return false;
+    }
+
     getParentTypeScope() : ASScope
     {
         let checkscope : ASScope = this;
@@ -638,6 +648,7 @@ export class ASStatement extends ASElement
     endsWithSemicolon : boolean = false;
     parseError : boolean = false;
     parsedType : ASScopeType = ASScopeType.Code;
+    inAsyncFunction : boolean = false;
 
     generatedTypes : boolean = false;
 };
@@ -1972,6 +1983,7 @@ function GenerateTypeInformation(scope : ASScope)
 
             let funcdef = scope.previous.ast;
             let dbfunc = AddDBMethod(scope, funcdef.name.value);
+            dbfunc.isAsync = !!funcdef.isAsync;
             if (funcdef.documentation)
                 dbfunc.documentation = typedb.FormatDocumentationComment(funcdef.documentation);
             dbfunc.moduleOffset = scope.previous.start_offset + funcdef.name.start;
@@ -2956,6 +2968,9 @@ export function ResolveTypeFromExpression(scope : ASScope, node : any) : typedb.
             return ResolveTypeFromOperator(scope, left_type, right_type, getBinaryOperatorOverloadMethod(node.operator));
         }
         break;
+        // The current runtime's FTask/adapter awaits have no value result.
+        case node_types.AwaitExpression:
+            return null;
         // -X
         case node_types.UnaryOperation:
         {
@@ -4356,6 +4371,11 @@ function DetectNodeSymbols(scope : ASScope, statement : ASStatement, node : any,
             return ResolveTypeFromOperator(scope, GetTypeFromSymbol(left_symbol), GetTypeFromSymbol(right_symbol), getBinaryOperatorOverloadMethod(node.operator));
         }
         break;
+        case node_types.AwaitExpression:
+        {
+            DetectNodeSymbols(scope, statement, node.children[0], parseContext, typedb.DBAllowSymbol.Properties);
+            return null;
+        }
         // -X
         case node_types.UnaryOperation:
         {
@@ -5649,6 +5669,7 @@ function DetectFormatStringSymbols(scope : ASScope, statement : ASStatement, nod
         }
 
         let fakeStatement = new ASStatement();
+        fakeStatement.inAsyncFunction = scope.isInAsyncFunction();
         fakeStatement.content = expressions[i];
         fakeStatement.start_offset = statement.start_offset + node.start + offsets[i];
         fakeStatement.end_offset = fakeStatement.start_offset + fakeStatement.content.length;
@@ -5985,7 +6006,8 @@ function GetCachedStatementParse(module : ASModule, scopetype : ASScopeType, sta
 
     // Check if the last statement we have cached matches
     let cachedStatement = module.cachedStatements[rawIndex];
-    if (cachedStatement && cachedStatement.parsed && cachedStatement.parsedType == scopetype && cachedStatement.content == statement.content)
+    if (cachedStatement && cachedStatement.parsed && cachedStatement.parsedType == scopetype
+        && cachedStatement.inAsyncFunction == statement.inAsyncFunction && cachedStatement.content == statement.content)
     {
         statement.ast = cachedStatement.ast;
         statement.parsed = true;
@@ -5998,7 +6020,8 @@ function GetCachedStatementParse(module : ASModule, scopetype : ASScopeType, sta
     if (rawIndex+1 < module.cachedStatements.length)
     {
         cachedStatement = module.cachedStatements[rawIndex+1];
-        if (cachedStatement && cachedStatement.parsed && cachedStatement.parsedType == scopetype && cachedStatement.content == statement.content)
+        if (cachedStatement && cachedStatement.parsed && cachedStatement.parsedType == scopetype
+            && cachedStatement.inAsyncFunction == statement.inAsyncFunction && cachedStatement.content == statement.content)
         {
             statement.parsed = true;
             statement.parseError = cachedStatement.parseError;
@@ -6012,7 +6035,8 @@ function GetCachedStatementParse(module : ASModule, scopetype : ASScopeType, sta
     if (rawIndex > 0)
     {
         cachedStatement = module.cachedStatements[rawIndex-1];
-        if (cachedStatement && cachedStatement.parsed && cachedStatement.parsedType == scopetype && cachedStatement.content == statement.content)
+        if (cachedStatement && cachedStatement.parsed && cachedStatement.parsedType == scopetype
+            && cachedStatement.inAsyncFunction == statement.inAsyncFunction && cachedStatement.content == statement.content)
         {
             statement.parsed = true;
             statement.parseError = cachedStatement.parseError;
@@ -6038,6 +6062,7 @@ function ParseAllStatements(scope : ASScope, debug : boolean = false)
         if (!statement)
             continue;
 
+        statement.inAsyncFunction = scope.isInAsyncFunction();
         let fromCache = GetCachedStatementParse(scope.module, scope.scopetype, statement, statement.rawIndex);
         if (!fromCache)
         {
@@ -6106,6 +6131,7 @@ function ParseAllStatements(scope : ASScope, debug : boolean = false)
                         continue;
 
                     let newStatement = new ASStatement();
+                    newStatement.inAsyncFunction = statement.inAsyncFunction;
                     newStatement.content = splitContent[splitIndex];
                     newStatement.start_offset = splitOffset;
                     newStatement.end_offset = splitOffset + newStatement.content.length;
@@ -6361,6 +6387,7 @@ export function ParseStatement(scopetype : ASScopeType, statement : ASStatement,
             startRule: startRule,
             precedesBlock: precedesBlock,
             endsWithSemicolon: statement.endsWithSemicolon,
+            inAsyncFunction: statement.inAsyncFunction,
         });
         statement.parseError = false;
     }

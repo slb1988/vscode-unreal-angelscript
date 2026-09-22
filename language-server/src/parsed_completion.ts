@@ -1149,6 +1149,15 @@ function AddCompletionsFromKeywords(context : CompletionContext, completions : A
             "const",
         ], completions);
 
+        if (!inFunctionBody && (isInClass || isInStruct || !context.scope
+            || context.scope.scopetype == scriptfiles.ASScopeType.Global
+            || context.scope.scopetype == scriptfiles.ASScopeType.Namespace))
+        {
+            AddCompletionsFromKeywordList(context, ["async"], completions);
+        }
+        if (context.scope?.isInAsyncFunction())
+            AddCompletionsFromKeywordList(context, ["await"], completions);
+
         if (isInSwitch)
         {
             if (CanCompleteTo(context, "case"))
@@ -2363,6 +2372,7 @@ function GenerateCompletionContext(asmodule : scriptfiles.ASModule, offset : num
     // Try to parse each candidate in the scope
     //  In reverse order, we prefer the longest candidate
     context.statement = new scriptfiles.ASStatement();
+    context.statement.inAsyncFunction = context.scope.isInAsyncFunction();
     for (let i = candidates.length-1; i >= 0; --i)
     {
         let candidate = candidates[i];
@@ -2450,6 +2460,7 @@ function GenerateCompletionContext(asmodule : scriptfiles.ASModule, offset : num
     {
         context.isSubExpression = true;
         context.subOuterStatement = new scriptfiles.ASStatement();
+        context.subOuterStatement.inAsyncFunction = context.scope.isInAsyncFunction();
         context.subOuterArgumentIndex = argumentIndex;
 
         let subCandidates = ExtractExpressionPreceding(content, subExprOffset, ignoreTable);
@@ -2525,6 +2536,7 @@ function GenerateCompletionContext(asmodule : scriptfiles.ASModule, offset : num
             );
 
             context.fullOuterStatement = new scriptfiles.ASStatement();
+            context.fullOuterStatement.inAsyncFunction = context.scope.isInAsyncFunction();
             context.fullOuterStatement.content = entireExpression
             context.fullOuterStatement.ast = null;
             context.fullOuterStatement.end_offset = context.subOuterStatement.start_offset;
@@ -2616,6 +2628,7 @@ function GenerateCompletionContext(asmodule : scriptfiles.ASModule, offset : num
     {
         // Parse the statement in front of the operator sign to get its type
         context.leftStatement = new scriptfiles.ASStatement();
+        context.leftStatement.inAsyncFunction = context.scope.isInAsyncFunction();
         let assignLeftOffset = context.statement.start_offset - 1 - contentOffset - context.rightOperator.length;
 
         // If we parsed the statement as a binary operator we should read the left side of the binary operation
@@ -2981,6 +2994,14 @@ function ExtractPriorExpressionAndSymbol(context : CompletionContext, node : any
             return ExtractPriorExpressionAndSymbol(context, node.children[0]);
         case scriptfiles.node_types.ElseStatement:
         case scriptfiles.node_types.DefaultCaseStatement:
+            return ExtractPriorExpressionAndSymbol(context, node.children[0]);
+        case scriptfiles.node_types.AwaitExpression:
+            context.isRightExpression = true;
+            if (!node.children[0])
+            {
+                context.completingSymbol = "";
+                return true;
+            }
             return ExtractPriorExpressionAndSymbol(context, node.children[0]);
         case scriptfiles.node_types.ReturnStatement:
             context.isRightExpression = true;

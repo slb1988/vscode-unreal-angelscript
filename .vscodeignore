@@ -6,4 +6,18 @@ extension/node_modules/**
 extension/out/**
 language-server/node_modules/**
 language-server/out/**
+examples/**
 node_modules/**
+
+# Distribution allowlist: ship bundled runtime, not local source/debug/test data.
+**
+!package.json
+!README.md
+!LICENSE
+!resources/**
+!extension/language-configuration.json
+!extension/syntaxes/*.json
+!extension/dist/*.js
+!extension/dist/terminateProcess.sh
+!extension/dist/languageclient-LICENSE.txt
+!language-server/dist/*.js

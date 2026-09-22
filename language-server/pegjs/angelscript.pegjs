@@ -198,6 +198,7 @@ statement
     / case_statement
     / default_case_statement
     / fallthrough_statement
+    / &await_prefix @assignment
     / var_decl
     / assignment
     / incomplete_var_decl
@@ -780,7 +781,17 @@ expr_binary_product
         }, head);
     }
 
-expr_unary = op:(op_unary / op_binary_sum / op_postfix) _ expr:expr_unary _
+// Contextual, not reserved: ordinary await() and identifiers remain valid outside async bodies.
+await_prefix
+    = "await" !identifier_char _ &{ return options.inAsyncFunction; }
+    / "await" !identifier_char __ &(identifier_start / "::" / constant)
+
+await_expression
+    = await_prefix expr:expr_unary?
+    { return Compound(range(), n.AwaitExpression, expr ? [expr] : []); }
+
+expr_unary = await_expression
+    / op:(op_unary / op_binary_sum / op_postfix) _ expr:expr_unary _
     {
         return CompoundOperator(
             range(),
@@ -1073,6 +1084,14 @@ comment_documentation
     }
 
 function_signature
+    = "async" __ &(function_return identifier _ "(") decl:plain_function_signature
+    {
+        decl.isAsync = true;
+        return ExtendedCompound(range(), decl);
+    }
+    / plain_function_signature
+
+plain_function_signature
     = ret:function_return name:identifier _ "("
         params:(
             // An incomplete parameter list is allowed if this is likely a function declaration

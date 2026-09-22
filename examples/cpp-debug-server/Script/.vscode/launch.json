@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "AngelScript Demo: connect to C++ server",
+            "type": "angelscript",
+            "request": "launch",
+            "hostname": "127.0.0.1",
+            "port": 27100,
+            "trace": true
+        }
+    ]
+}

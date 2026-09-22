@@ -238,6 +238,7 @@ export class DBMethod implements DBSymbol
     isFinal : boolean = false;
     isProperty : boolean = false;
     isOverride : boolean = false;
+    isAsync : boolean = false;
     isDefaultsOnly : boolean = false;
     isLocal : boolean = false;
     id : number = NextMethodId++;
@@ -287,6 +288,7 @@ export class DBMethod implements DBSymbol
         inst.isCallable = this.isCallable;
         inst.isBlueprintOverride = this.isBlueprintOverride;
         inst.isConst = this.isConst;
+        inst.isAsync = this.isAsync;
         inst.isProperty = this.isProperty;
         inst.isDefaultsOnly = this.isDefaultsOnly;
         inst.determinesOutputTypeArgumentIndex = this.determinesOutputTypeArgumentIndex;
@@ -414,6 +416,8 @@ export class DBMethod implements DBSymbol
         let decl : string = "";
         if (!skipReturn)
         {
+            if (this.isAsync)
+                decl += "async ";
             if (determineType)
             {
                 let outputType = this.applyDeterminesOutputType(this.returnType, determineType);

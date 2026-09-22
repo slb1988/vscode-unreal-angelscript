@@ -7,10 +7,35 @@
             "name": "Launch Client",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "--extensionDevelopmentPath=${workspaceRoot}",
-                //"--enable-proposed-api", "Hazelight.unreal-angelscript"
+                "--extensionDevelopmentPath=${workspaceFolder}"
             ],
-            "outFiles": ["${workspaceRoot}/extension/dist/**/*.js"],
+            "preLaunchTask": "npm: compile",
+            "outFiles": ["${workspaceFolder}/extension/dist/**/*.js"]
+        },
+        {
+            "type": "extensionHost",
+            "request": "launch",
+            "name": "Launch Client (MainDev)",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--new-window",
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--user-data-dir=${env:LOCALAPPDATA}/UnrealAngelscriptDev/user-data",
+                "--extensions-dir=${env:LOCALAPPDATA}/UnrealAngelscriptDev/extensions",
+                "--disable-workspace-trust",
+                "D:/MainDev/Main/Script",
+                "--goto",
+                "D:/MainDev/Main/Script/Tests/1000_RuntimeTests/TestCase_10_OptionUI.as:34"
+            ],
+            "preLaunchTask": "npm: compile",
+            "outFiles": ["${workspaceFolder}/extension/dist/**/*.js"]
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach to Client (CLI Host)",
+            "port": 9333,
+            "outFiles": ["${workspaceFolder}/extension/dist/**/*.js"]
         },
         {
             "type": "node",
@@ -18,7 +43,7 @@
             "name": "Attach to Server",
             "port": 6009,
             "restart": true,
-            "outFiles": ["${workspaceRoot}/language-server/dist/**/*.js"]
+            "outFiles": ["${workspaceFolder}/language-server/dist/**/*.js"]
         },
         {
             "name": "Debug Debug Adapter",
@@ -34,6 +59,14 @@
         {
             "name": "Client + Server",
             "configurations": ["Launch Client", "Attach to Server"]
+        },
+        {
+            "name": "Client + Server (MainDev)",
+            "configurations": ["Launch Client (MainDev)", "Attach to Server"]
+        },
+        {
+            "name": "Attach to Running Dev Host",
+            "configurations": ["Attach to Client (CLI Host)", "Attach to Server"]
         }
     ]
 }

@@ -515,6 +515,7 @@ export function GetInlayHintsForNode(scope : scriptfiles.ASScope, statement : sc
         case node_types.Assignment:
         case node_types.CompoundAssignment:
         case node_types.ReturnStatement:
+        case node_types.AwaitExpression:
         case node_types.DefaultStatement:
         case node_types.SwitchStatement:
         {

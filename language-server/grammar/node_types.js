@@ -77,6 +77,7 @@ module.exports = {
     AccessDeclaration: indexed ? i++ : "AccessDeclaration",
     AccessClass: indexed ? i++ : "AccessClass",
     IncompleteAccessSpecifier: indexed ? i++ : "IncompleteAccessSpecifier",
+    AwaitExpression: indexed ? i++ : "AwaitExpression",
 }
 
 })();
