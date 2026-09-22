@@ -1,4 +1,4 @@
-# protocol.h：示例线协议
+ # protocol.h：示例线协议
 
 源码：[src/protocol.h](../src/protocol.h)。这里只编码基础字段和帧，不处理 DAP，不持有 socket。
 
